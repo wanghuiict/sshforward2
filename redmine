@@ -7,7 +7,7 @@ if [ $# -eq 0 ]; then
 	cat >&1 << eof
   # vault file
   # remote login node
-  loginhost=159.226.xxx.xxx
+  loginhost=123.45.xxx.xxx
   loginport=22
   loginuser=yourname
   loginpass=password

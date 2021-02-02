@@ -1,0 +1,25 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+    echo -e "provide services in SSH forwarding tunnel"
+	echo -e "Usage:\n\t$0 <app name> <vault file>"
+	echo -e "App name:"
+	echo -e  "\topenstack"
+	echo -e  "\tredmine"
+	exit 0
+fi
+
+app=$1
+shift
+
+case "$app" in
+    openstack )
+	    exec /bin/bash openstack $* &
+		;;
+    redmine )
+        exec /bin/bash redmine $* &
+        ;;
+    -- ) shift; break ;;
+    * ) echo "error input\n"; exit 127;;
+esac
+
