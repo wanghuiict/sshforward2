@@ -12,8 +12,6 @@ fi
 app=$1
 shift
 
-[ $# -eq 0 ] && { /bin/bash $app; exit 0; }
-
 case "$app" in
     openstack )
         ;;
@@ -23,4 +21,5 @@ case "$app" in
     * ) echo -e "error input"; exit 127;;
 esac
 
+[ $# -eq 0 ] && { /bin/bash $app; exit 0; }
 exec /bin/bash $app $* &
