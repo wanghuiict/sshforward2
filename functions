@@ -34,6 +34,7 @@ load_vault() {
   local vault=$1
   if [ ! -f $vault ]; then
       vault=~/.vault/$1
+      [ -d ~/.vault ] || { mkdir ~/.vault; chmod 700 ~/.vault; } 
       if [ ! -f $vault ]; then
          echo "vault file $1 or $vault not found" >&1
 		 exit 1

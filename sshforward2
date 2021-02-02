@@ -12,14 +12,15 @@ fi
 app=$1
 shift
 
+[ $# -eq 0 ] && { /bin/bash $app; exit 0; }
+
 case "$app" in
     openstack )
-	    exec /bin/bash openstack $* &
-		;;
+        ;;
     redmine )
-        exec /bin/bash redmine $* &
         ;;
     -- ) shift; break ;;
-    * ) echo "error input\n"; exit 127;;
+    * ) echo -e "error input"; exit 127;;
 esac
 
+exec /bin/bash $app $* &
