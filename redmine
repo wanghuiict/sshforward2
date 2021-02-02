@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# override defaults
+if [ $# -eq 0 ]; then
+    echo -e "Usage: $0 <vault file> \n"
+	echo -e "\nVault file example:"
+	cat >&1 << eof
+  # vault file
+  # remote login node
+  loginhost=159.226.xxx.xxx
+  loginport=22
+  loginuser=yourname
+  loginpass=password
+  # redmine server
+  server=10.10.xxx.xxx
+  # local forward server:80
+  local_ip=127.0.0.1
+  local_forward=8080
+eof
+    echo -e "Vault file location:\n    ~/.vault/"
+	exit 0
+fi
+
+. functions
+
+load_vault $1
+
+ip a s |grep -w "^[[:space:]]*inet $local_ip" &>/dev/null
+[ $? -eq 0 ] || { echo -e "ERROR: $local_ip not found."; exit 1; }
+
+cmdline="$0 $*"
+
+detect_redmine() {
+    local count=6
+    while true; do
+        curl -s http://$local_ip:$local_forward |grep redmine &>/dev/null
+        if [ $? -ne 0 ]; then
+            if [ $count -eq 0 ]; then
+			    echo "$(date) $$ rerun program: $cmdline"
+                exec $cmdline
+            fi
+		    ((count--))
+            sleep 5
+			continue
+        fi
+		count=6
+		sleep 30
+    done
+}
+
+echo -e "\033[31mNOTE: If it's stuck for 30 seconds you can press Ctrl+C and rerun it.\033[0m"
+echo -e "------------------------------------------------------------------------------"
+echo -e "remote host     : $loginuser@$loginhost:$loginport (local: $local_ip:$local_forward)"
+echo -e "------------------------------------------------------------------------------"
+
+while true; do
+    # Kill the processes that is already running
+    searchprocess="$(basename $0) $1"
+	for x in $(ps -ef |grep "$searchprocess" |grep -v grep | awk '{print $2}'); do
+        if [ "$x" != "$$" ]; then
+              kill $x &>/dev/null
+        fi
+    done
+
+    kill_ipport $local_ip:$local_forward
+
+    expect -f http.exp $local_ip $local_forward $server $loginhost $loginport $loginuser $loginpass &
+    wait_ipport $local_ip:$local_forward
+
+
+    N=$(ps -ef |grep -E "$local_ip:$local_forward" |grep -v grep |wc -l)
+	if [ $N -eq 1 ]; then
+        echo -e "\nDone.\nYou can browse http://$local_ip:$local_forward"
+		#detect_redmine
+        detect_page_endless http://$local_ip:$local_forward redmine
+        echo "$(date) $$ rerun program: $cmdline"
+        exec $cmdline
+	fi
+	echo "...................................."
+done

@@ -1,0 +1,65 @@
+#!/bin/bash
+
+wait_ipport() {
+    local ipport=$1 #e.g. "10.10.153.11:18888"
+	local loop=100
+    while true; do
+        ss -lnt |grep -w "$ipport" &>/dev/null
+        [ $? -eq 0 ] && return 0
+		sleep 0.5
+		((loop--))
+		# timeout
+		[ $loop -eq 0 ] && return 1
+    done
+}
+
+kill_ipport() {
+    # LISTEN    0    128    10.10.153.11:18888    *:*    users:(("ssh",pid=28610,fd=5))
+    local ipport=$1 #e.g. "10.10.153.11:18888"
+    local pid=
+	while true; do
+        # e.g. pid=28610
+        eval $(ss -lntp |grep -w "$ipport"|cut -d ',' -f 2)
+	    if [ ! -z "$pid" ]; then
+		    kill $pid
+			sleep 1
+			pid=
+			continue
+	    fi
+		break
+    done
+}
+
+load_vault() {
+  local vault=$1
+  if [ ! -f $vault ]; then
+      vault=~/.vault/$1
+      if [ ! -f $vault ]; then
+         echo "vault file $1 or $vault not found" >&1
+		 exit 1
+      fi
+  fi
+  chmod 600 $vault
+  . $vault
+}
+
+detect_page_endless() {
+    local count=6
+	local url=$1
+    local keyword="$2"
+
+    while true; do
+		curl -s $url |grep "$keyword" &>/dev/null
+        if [ $? -ne 0 ]; then
+            if [ $count -eq 0 ]; then
+                return 1
+            fi
+		    ((count--))
+            sleep 5
+			continue
+        fi
+		count=6
+		sleep 30
+    done
+}
+

@@ -1,0 +1,30 @@
+#!/usr/bin/expect
+
+set timeout 10
+
+set localip [lindex $argv 0];
+set port [lindex $argv 1];
+set server [lindex $argv 2];
+set loginhost [lindex $argv 3];
+set loginport [lindex $argv 4];
+set loginuser [lindex $argv 5];
+set loginpass [lindex $argv 6];
+
+spawn ssh -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -f -N -L ${localip}:$port:$server:80 \
+  $loginhost -p $loginport -l $loginuser
+
+expect {
+    -re "assword:" {
+      send "$loginpass\r"
+      exp_continue
+    }
+    -re "/.ssh/id_dsa':" {
+      send "$loginpass\r"
+      exp_continue
+    }
+    -re "/.ssh/id_rsa':" {
+      send "$loginpass\r"
+      exp_continue
+    }
+}
+

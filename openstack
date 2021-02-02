@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# override defaults
+if [ $# -eq 0 ]; then
+    echo -e "Usage: $0 <vault file>"
+	echo -e "\nVault file example:"
+	cat >&1 << eof
+  # vault file
+  # remote login node
+  loginhost=login.remote
+  loginport=22
+  loginuser=root
+  loginpass=111111
+  # remote controller
+  controller=192.168.1.1
+  user1=root
+  pass1=111111
+  # local forward controller:22
+  local_ip=127.0.0.1
+  local_forward=2222
+  # local forward services (optional)
+  rabbitmq=15672
+  mysql=13306
+  cloudman=8080
+  dashboard=18888
+  novnc=6080
+eof
+    echo -e "Vault file location:\n    ~/.vault/"
+	exit 0
+fi
+
+# local forward services
+rabbitmq=15672
+mysql=13306
+cloudman=8080
+dashboard=18888
+novnc=6080
+
+. functions
+
+load_vault $1
+
+ip a s |grep -w "^[[:space:]]*inet $local_ip" &>/dev/null
+[ $? -eq 0 ] || { echo -e "ERROR: $local_ip not found."; exit 1; }
+
+cmdline="$0 $*"
+
+detect_openstack() {
+    local count=6
+    while true; do
+		curl -s http://$local_ip:$dashboard/auth |grep openstack &>/dev/null
+        if [ $? -ne 0 ]; then
+            if [ $count -eq 0 ]; then
+			    echo "$(date) $$ rerun program: $cmdline"
+                exec $cmdline
+            fi
+		    ((count--))
+            sleep 5
+			continue
+        fi
+		count=6
+		sleep 30
+    done
+}
+
+echo -e "\033[31mNOTE: If it's stuck for 30 seconds you can press Ctrl+C and rerun it.\033[0m"
+echo -e "------------------------------------------------------------------------------"
+echo -e "remote host     : $loginuser@$loginhost:$loginport (local: $local_ip:$local_forward)"
+echo -e "controller      : $user1@$controller\n"
+echo -e "rabbitmq        : $local_ip:$rabbitmq"
+echo -e "mysql           : $local_ip:$mysql"
+echo -e "cloudmanagement : http://$local_ip:$cloudman"
+echo -e "novnc           : $local_ip:$novnc"
+echo -e "dashboard       : http://$local_ip:$dashboard"
+echo -e "------------------------------------------------------------------------------"
+
+while true; do
+    # Kill the processes that is already running
+    searchprocess="$(basename $0) $1"
+	for x in $(ps -ef |grep "$searchprocess" |grep -v grep | awk '{print $2}'); do
+        if [ "$x" != "$$" ]; then
+              kill $x &>/dev/null
+        fi
+    done
+
+    kill_ipport $local_ip:$cloudman
+    kill_ipport $local_ip:$local_forward
+
+    expect -f step1.exp $local_ip $local_forward $controller $loginhost $loginport $loginuser $loginpass &
+    wait_ipport $local_ip:$local_forward
+
+    expect -f step2.exp $local_ip $local_forward $controller $rabbitmq $mysql $cloudman $dashboard $novnc $user1 $pass1 &
+    wait_ipport $local_ip:$cloudman
+
+    N=$(ps -ef |grep -E "$local_ip:$cloudman|$local_ip:$local_forward" |grep -v grep |wc -l)
+	if [ $N -eq 2 ]; then
+        echo -e "\nDone.\nYou can browse http://$local_ip:$cloudman"
+		detect_openstack
+		# never reach here
+	    break
+	fi
+	echo "...................................."
+done
