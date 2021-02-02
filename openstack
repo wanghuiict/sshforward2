@@ -65,8 +65,9 @@ detect_openstack() {
 
 echo -e "\033[31mNOTE: If it's stuck for 30 seconds you can press Ctrl+C and rerun it.\033[0m"
 echo -e "------------------------------------------------------------------------------"
-echo -e "remote host     : $loginuser@$loginhost:$loginport (local: $local_ip:$local_forward)"
+echo -e "remote login    : $loginuser@$loginhost:$loginport"
 echo -e "controller      : $user1@$controller\n"
+echo -e "ssh             : $local_ip:$local_forward"
 echo -e "rabbitmq        : $local_ip:$rabbitmq"
 echo -e "mysql           : $local_ip:$mysql"
 echo -e "cloudmanagement : http://$local_ip:$cloudman"
