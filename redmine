@@ -23,7 +23,7 @@ fi
 
 . functions
 
-load_vault $1
+load_vault $1 || exit 1
 
 ip a s |grep -w "^[[:space:]]*inet $local_ip" &>/dev/null
 [ $? -eq 0 ] || { echo -e "ERROR: $local_ip not found."; exit 1; }
