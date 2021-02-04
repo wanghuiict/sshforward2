@@ -45,24 +45,6 @@ ip a s |grep -w "^[[:space:]]*inet $local_ip" &>/dev/null
 
 cmdline="$0 $*"
 
-detect_openstack() {
-    local count=6
-    while true; do
-		curl -s http://$local_ip:$dashboard/auth |grep openstack &>/dev/null
-        if [ $? -ne 0 ]; then
-            if [ $count -eq 0 ]; then
-			    echo "$(date) $$ rerun program: $cmdline"
-                exec $cmdline
-            fi
-		    ((count--))
-            sleep 5
-			continue
-        fi
-		count=6
-		sleep 30
-    done
-}
-
 echo -e "\033[31mNOTE: If it's stuck for 30 seconds you can press Ctrl+C and rerun it.\033[0m"
 echo -e "------------------------------------------------------------------------------"
 echo -e "remote login    : $loginuser@$loginhost:$loginport"
@@ -96,7 +78,9 @@ while true; do
     N=$(ps -ef |grep -E "$local_ip:$cloudman|$local_ip:$local_forward" |grep -v grep |wc -l)
 	if [ $N -eq 2 ]; then
         echo -e "\nDone.\nYou can browse http://$local_ip:$cloudman"
-		detect_openstack
+        detect_page_endless http://$local_ip:$dashboard/auth openstack
+        echo "$(date) $$ rerun program: $cmdline"
+        exec $cmdline
 		# never reach here
 	    break
 	fi
