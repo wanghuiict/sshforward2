@@ -73,8 +73,8 @@ while true; do
         echo -e "\nYou can browse http://$local_ip:$local_forward\nDone."
 		#detect_redmine
         detect_page_endless http://$local_ip:$local_forward redmine
-        echo "$(date) $$ rerun program: $cmdline"
-        exec $cmdline
+        echo "$(date) $$ rerun program: /bin/bash $cmdline"
+        exec /bin/bash $cmdline
 	fi
 	echo "...................................."
 done

@@ -80,8 +80,8 @@ while true; do
 	if [ $N -eq 2 ]; then
         echo -e "\nYou can browse http://$local_ip:$cloudman\nDone."
         detect_page_endless http://$local_ip:$dashboard/auth openstack
-        echo "$(date) $$ rerun program: $cmdline"
-        exec $cmdline
+        echo "$(date) $$ rerun program: /bin/bash $cmdline"
+        exec /bin/bash $cmdline
 		# never reach here
 	    break
 	fi
