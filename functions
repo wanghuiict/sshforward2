@@ -31,22 +31,19 @@ kill_ipport() {
 }
 
 get_vault_file() {
-  local vault="$1"
+  local vault=
+  [ -d ~/.vault ] || { mkdir -p ~/.vault && chmod 700 ~/.vault; } 
+  vault=~/.vault/$(basename $1)
   if [ ! -f "$vault" ]; then
-      [ -d ~/.vault ] || { mkdir -p ~/.vault && chmod 700 ~/.vault; } 
-      vault=~/.vault/$(basename $1)
-      if [ ! -f "$vault" ]; then
-         echo "vault file $1 or $vault not found" >&1
-         return 1
-      fi
+     echo "vault file $vault not found" >&1
+     return 1
   fi
   chmod 600 $vault
   echo $vault
 }
 
-# note: get_vault_file must be called in advance
 load_vault() {
-  local vault="$1"
+  local vault=$(get_vault_file $1)
   . $vault || { echo "fatal: load vault error." >&1; return 1; }
 }
 

@@ -59,6 +59,7 @@ echo -e "-----------------------------------------------------------------------
 
 while true; do
     # Kill the processes that is already running
+    echo "searchprocess $(basename $0) $1"
     searchprocess="$(basename $0) $1"
 	for x in $(ps -ef |grep "$searchprocess" |grep -v grep | awk '{print $2}'); do
         if [ "$x" != "$$" ]; then
@@ -77,7 +78,7 @@ while true; do
 
     N=$(ps -ef |grep -E "$local_ip:$cloudman|$local_ip:$local_forward" |grep -v grep |wc -l)
 	if [ $N -eq 2 ]; then
-        echo -e "\nDone.\nYou can browse http://$local_ip:$cloudman"
+        echo -e "\nYou can browse http://$local_ip:$cloudman\nDone."
         detect_page_endless http://$local_ip:$dashboard/auth openstack
         echo "$(date) $$ rerun program: $cmdline"
         exec $cmdline

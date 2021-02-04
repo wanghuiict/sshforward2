@@ -70,7 +70,7 @@ while true; do
 
     N=$(ps -ef |grep -E "$local_ip:$local_forward" |grep -v grep |wc -l)
 	if [ $N -eq 1 ]; then
-        echo -e "\nDone.\nYou can browse http://$local_ip:$local_forward"
+        echo -e "\nYou can browse http://$local_ip:$local_forward\nDone."
 		#detect_redmine
         detect_page_endless http://$local_ip:$local_forward redmine
         echo "$(date) $$ rerun program: $cmdline"
