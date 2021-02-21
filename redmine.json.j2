@@ -1,0 +1,16 @@
+{
+    "ssh-0": {
+        "host": "{{ loginhost }}",
+        "port": "{{ loginport }}",
+        "user": "{{ loginuser }}",
+        "pass": "{{ loginpass }}",
+        "forward": {
+            "redmine": {
+                "host": "{{ local_ip }}",
+                "port": "{{ local_forward }}",
+                "rhost": "{{ server }}",
+                "rport": "80"
+            }
+        }
+    }
+}

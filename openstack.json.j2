@@ -1,0 +1,50 @@
+{
+    "ssh-0": {
+        "host": "{{ loginhost }}",
+        "port": "{{ loginport }}",
+        "user": "{{ loginuser }}",
+        "pass": "{{ loginpass }}",
+        "forward": {
+            "ssh-1": {
+                "rhost": "{{ controller }}",
+                "rport": "22",
+                "host": "{{ local_ip }}",
+                "port": "{{ local_forward }}",
+                "user": "{{ user1 }}",
+                "pass": "{{ pass1 }}",
+                "forward": {
+                    "dashboard": {
+                        "host": "{{ local_ip }}",
+                        "port": "{{ dashboard_port }}",
+                        "rhost": "{{ controller }}",
+                        "rport": "80"
+                    },
+                    "rabbitmq": {
+                        "host": "{{ local_ip }}",
+                        "port": "{{ rabbitmq_port }}",
+                        "rhost": "{{ controller }}",
+                        "rport": "5672"
+                    },
+                    "mysql": {
+                        "host": "{{ local_ip }}",
+                        "port": "{{ mysql_port }}",
+                        "rhost": "{{ controller }}",
+                        "rport": "3306"
+                    },
+                    "cloudmanagement": {
+                        "host": "{{ local_ip }}",
+                        "port": "{{ cloudman_port }}",
+                        "rhost": "{{ controller }}",
+                        "rport": "8080"
+                    },
+                    "novnc": {
+                        "host": "{{ local_ip }}",
+                        "port": "{{ novnc_port }}",
+                        "rhost": "{{ controller }}",
+                        "rport": "6080"
+                    }
+                }
+            }
+        }
+    }
+}

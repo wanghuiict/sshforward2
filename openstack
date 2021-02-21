@@ -5,57 +5,64 @@ if [ $# -eq 0 ]; then
     echo -e "Usage: $0 <vault file>"
 	echo -e "\nVault file example:"
 	cat >&1 << eof
-  # vault file
+  # vault yaml file
   # remote login node
-  loginhost=login.remote
-  loginport=22
-  loginuser=root
-  loginpass=111111
+  loginhost: login.remote
+  loginport: 22
+  loginuser: root
+  loginpass: 111111
   # remote controller
-  controller=192.168.1.1
-  user1=root
-  pass1=111111
+  controller: 192.168.1.1
+  user1: root
+  pass1: 111111
   # local forward controller:22
-  local_ip=127.0.0.1
-  local_forward=2222
-  # local forward services (optional)
-  rabbitmq=15672
-  mysql=13306
-  cloudman=8080
-  dashboard=18888
-  novnc=6080
+  local_ip: 127.0.0.1
+  local_forward: 2222
+  rabbitmq_port: 15672
+  mysql_port: 13306
+  cloudman_port: 8080
+  dashboard_port: 18888
+  novnc_port: 6080
 eof
     echo -e "Vault file location:\n    ~/.vault/"
 	exit 0
 fi
 
-# local forward services
-rabbitmq=15672
-mysql=13306
-cloudman=8080
-dashboard=18888
-novnc=6080
-
 . functions
-
-load_vault $1 || exit 1
-
-ip a s |grep -w "^[[:space:]]*inet $local_ip" &>/dev/null
-[ $? -eq 0 ] || { echo -e "ERROR: $local_ip not found."; exit 1; }
 
 cmdline="$0 $*"
 
+conf="openstack.json"
+vault="$(basename $1)"
+# create conf
+conf=$(python helper.py $conf genconf $vault) || exit -127
+# conf created in ~/
+#echo $conf
+
+##############################################################################
+# SSH Host: yourname@1.2.3.4:8022
+# ssh-1                10.10.153.11:2222            192.168.8.1:22   
+#
+# SSH Host: root@10.10.153.11:2222
+# cloudmanagement      10.10.153.11:8080            192.168.8.1:8080 
+# novnc                10.10.153.11:6080            192.168.8.1:6080 
+# dashboard            10.10.153.11:18888           192.168.8.1:80   
+# rabbitmq             10.10.153.11:15672           192.168.8.1:5672 
+# mysql                10.10.153.11:13306           192.168.8.1:3306 
+##############################################################################
+for x in $(python helper.py $conf info |grep -v "^SSH\ Host"|grep "^[a-zA-Z_]"|awk '{print $2}'|cut -d ":" -f 1 |uniq); do
+  ip a s |grep -w "^[[:space:]]*inet $x" &>/dev/null
+  [ $? -eq 0 ] || { echo -e "ERROR: IP ADDR $x not found."; exit 1; }
+done
+
 echo -e "\033[31mNOTE: If it's stuck for 30 seconds you can press Ctrl+C and rerun it.\033[0m"
 echo -e "------------------------------------------------------------------------------"
-echo -e "remote login    : $loginuser@$loginhost:$loginport"
-echo -e "controller      : $user1@$controller\n"
-echo -e "ssh             : $local_ip:$local_forward"
-echo -e "rabbitmq        : $local_ip:$rabbitmq"
-echo -e "mysql           : $local_ip:$mysql"
-echo -e "cloudmanagement : http://$local_ip:$cloudman"
-echo -e "novnc           : $local_ip:$novnc"
-echo -e "dashboard       : http://$local_ip:$dashboard"
+python helper.py $conf info
 echo -e "------------------------------------------------------------------------------"
+
+cloudman=$(python helper.py $conf info |grep ^cloudmanagement|awk '{print $2}')
+dashboard=$(python helper.py $conf info |grep ^dashboard|awk '{print $2}')
+local_forward=$(python helper.py $conf info |grep ^ssh|awk '{print $2}')
 
 while true; do
     # Kill the processes that is already running
@@ -67,19 +74,20 @@ while true; do
         fi
     done
 
-    kill_ipport $local_ip:$cloudman
-    kill_ipport $local_ip:$local_forward
+    kill_ipport $cloudman
+    kill_ipport $local_forward
 
-    expect -f step1.exp $local_ip $local_forward $controller $loginhost $loginport $loginuser $loginpass &
-    wait_ipport $local_ip:$local_forward
+    # ssh connect
+    cat << eof1 |expect -f - &
+$(python helper.py $conf expect)
+eof1
+    wait_ipport $local_forward
+    wait_ipport $cloudman
 
-    expect -f step2.exp $local_ip $local_forward $controller $rabbitmq $mysql $cloudman $dashboard $novnc $user1 $pass1 &
-    wait_ipport $local_ip:$cloudman
-
-    N=$(ps -ef |grep -E "$local_ip:$cloudman|$local_ip:$local_forward" |grep -v grep |wc -l)
+    N=$(ps -ef |grep -E "$cloudman|$local_forward" |grep -v grep |wc -l)
 	if [ $N -eq 2 ]; then
-        echo -e "\nYou can browse http://$local_ip:$cloudman\nDone."
-        detect_page_endless http://$local_ip:$dashboard/auth openstack
+        echo -e "\nYou can browse http://$cloudman\nDone."
+        detect_page_endless http://$dashboard/auth openstack
         echo "$(date) $$ rerun program: /bin/bash $cmdline"
         exec /bin/bash $cmdline
 		# never reach here

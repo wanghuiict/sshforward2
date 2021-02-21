@@ -5,6 +5,7 @@ check_command() {
 }
 
 check_command expect || exit 127
+check_command python || exit 127
 
 if [ $# -eq 0 ]; then
     echo -e "provide services in SSH forwarding tunnel"
@@ -31,7 +32,7 @@ esac
 
 . functions
 # test
-get_vault_file $1 || exit 1
+get_vault_file $1 &> /dev/null || exit 1
 
 # vault file located in ~/.vault/
 vault=$(basename $1)
