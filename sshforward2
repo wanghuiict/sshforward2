@@ -9,12 +9,25 @@ check_command python || exit 127
 
 if [ $# -eq 0 ]; then
     echo -e "provide services in SSH forwarding tunnel"
-	echo -e "Usage:\n\t$0 <app name> <vault file>"
+	echo -e "Usage:\n\t$0 [-i] <app name> <vault file>"
 	echo -e "App name:"
 	echo -e  "\topenstack"
 	echo -e  "\tredmine"
+    echo -e "Options:"
+    echo -e "\t-i        show config info and exit."
 	exit 0
 fi
+
+onlyshow=
+while getopts ":i" opt; do
+    case $opt in
+      i ) onlyshow="-i"
+          ;;
+      ? ) echo "error input"
+          exit 1;;
+    esac
+done
+shift $(($OPTIND - 1))
 
 app=$1
 shift
@@ -32,10 +45,10 @@ esac
 
 . functions
 # test
-get_vault_file $1 &> /dev/null || exit 1
+get_vault_file $1 &> /dev/null || { echo "failed to get vault file: $1" >&1; exit 1; }
 
 # vault file located in ~/.vault/
 vault=$(basename $1)
 
-exec /bin/bash $app $vault &
+exec /bin/bash $app $onlyshow $vault &
 

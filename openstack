@@ -30,7 +30,16 @@ fi
 
 . functions
 
-cmdline="$0 $*"
+showinfo=false
+while getopts ":i" opt; do
+    case $opt in
+      i ) showinfo=true
+          ;;
+      ? ) echo "error input"
+          exit 1;;
+    esac
+done
+shift $(($OPTIND - 1))
 
 conf="openstack.json"
 vault="$(basename $1)"
@@ -60,14 +69,22 @@ echo -e "-----------------------------------------------------------------------
 python helper.py $conf info
 echo -e "------------------------------------------------------------------------------"
 
+searchprocess="$(basename $0) $1"
 cloudman=$(python helper.py $conf info |grep ^cloudmanagement|awk '{print $2}')
 dashboard=$(python helper.py $conf info |grep ^dashboard|awk '{print $2}')
 local_forward=$(python helper.py $conf info |grep ^ssh|awk '{print $2}')
 
+if $showinfo; then
+     ps -ef |grep -E "$searchprocess|$cloudman|$local_forward" |grep -v grep
+     echo -e "\nDone."
+     exit 0
+fi
+
+cmdline="$0 $*"
+
 while true; do
     # Kill the processes that is already running
     echo "searchprocess $(basename $0) $1"
-    searchprocess="$(basename $0) $1"
 	for x in $(ps -ef |grep "$searchprocess" |grep -v grep | awk '{print $2}'); do
         if [ "$x" != "$$" ]; then
               kill $x &>/dev/null

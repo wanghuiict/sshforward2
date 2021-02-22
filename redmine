@@ -23,7 +23,16 @@ fi
 
 . functions
 
-cmdline="$0 $*"
+showinfo=false
+while getopts ":i" opt; do
+    case $opt in
+      i ) showinfo=true
+          ;;
+      ? ) echo "error input"
+          exit 1;;
+    esac
+done
+shift $(($OPTIND - 1))
 
 conf="redmine.json"
 vault="$(basename $1)"
@@ -42,11 +51,19 @@ echo -e "-----------------------------------------------------------------------
 python helper.py $conf info
 echo -e "------------------------------------------------------------------------------"
 
+searchprocess="$(basename $0) $1"
 redmine=$(python helper.py $conf info |grep ^redmine|awk '{print $2}')
+
+if $showinfo; then
+     ps -ef |grep -E "$searchprocess|$redmine" |grep -v grep
+     echo -e "\nDone."
+     exit 0
+fi
+
+cmdline="$0 $*"
 
 while true; do
     # Kill the processes that is already running
-    searchprocess="$(basename $0) $1"
 	for x in $(ps -ef |grep "$searchprocess" |grep -v grep | awk '{print $2}'); do
         if [ "$x" != "$$" ]; then
               kill $x &>/dev/null
