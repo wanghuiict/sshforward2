@@ -19,6 +19,7 @@ kill_ipport() {
     local pid=
     while true; do
         # e.g. pid=28610
+        ss -lntp |grep -w "$ipport"
         eval $(ss -lntp |grep -w "$ipport"|cut -d ',' -f 2)
         if [ ! -z "$pid" ]; then
             kill $pid

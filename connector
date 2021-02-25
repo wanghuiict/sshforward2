@@ -1,0 +1,137 @@
+#!/bin/bash
+
+# override defaults
+if [ $# -eq 0 ]; then
+    echo -e "Usage: $0 <conf file > <vault file>"
+	echo -e "\nVault file example:"
+	cat >&1 << eof
+  # vault yaml file
+  # remote login node
+  loginhost: login.remote
+  loginport: 22
+  loginuser: root
+  loginpass: 111111
+  # remote controller
+  controller: 192.168.1.1
+  user1: root
+  pass1: 111111
+  # local forward controller:22
+  local_ip: 127.0.0.1
+  local_forward: 2222
+  rabbitmq_port: 15672
+  mysql_port: 13306
+  cloudman_port: 8080
+  dashboard_port: 18888
+  novnc_port: 6080
+eof
+    echo -e "Vault file location:\n    ~/.vault/"
+	exit 0
+fi
+
+. functions
+
+showinfo=false
+while getopts ":i" opt; do
+    case $opt in
+      i ) showinfo=true
+          ;;
+      ? ) echo "error input"
+          exit 1;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+conf="$1"
+vault="$(basename $2)"
+# create conf
+conf=$(python helper.py $conf genconf $vault) || exit -127
+#echo $conf
+
+##############################################################################
+# SSH Host: 1.2.3.4 -p 8022 -l user1
+# ssh-1                10.10.153.11:10022         192.168.99.99:60022
+# SSH Host: 10.10.153.11 -p 10022 -l user2
+# ssh-2                10.10.153.11:2222            192.168.8.1:22   
+# SSH Host: 10.10.153.11 -p 2222 -l root
+# cloudmanagement          10.10.153.11:8080            192.168.8.1:8080 
+# novnc                10.10.153.11:6080            192.168.8.1:6080 
+# dashboard            10.10.153.11:18888           192.168.8.1:80   
+# rabbitmq             10.10.153.11:15672           192.168.8.1:5672 
+# mysql                10.10.153.11:13306           192.168.8.1:3306 
+##############################################################################
+for x in $(python helper.py $conf info |grep -v "^SSH\ Host"|grep "^[a-zA-Z_]"|awk '{print $2}'|cut -d ":" -f 1 |uniq); do
+  ip a s |grep -w "^[[:space:]]*inet $x" &>/dev/null
+  [ $? -eq 0 ] || { echo -e "ERROR: IP ADDR $x not found."; exit 1; }
+done
+
+echo -e "\033[31mNOTE: If it's stuck for 30 seconds you can press Ctrl+C and rerun it.\033[0m"
+echo -e "------------------------------------------------------------------------------"
+python helper.py $conf info
+echo -e "------------------------------------------------------------------------------"
+
+searchprocess="$(basename $0) $1 $2"
+conns=()
+ipport=()
+
+IFS=$'\n'; i=0; for x in $(python helper.py $conf info |grep "^SSH\ Host"); do
+    unset IFS
+    read stub stub a b c d e <<< $x
+    conns[$i]="$a $b $c $d $e"
+    ipport[$i]="$a:$c"
+    ((i++))
+done
+
+#IFS=$'\n';for x in ${conns[@]};do echo $x;done
+
+if $showinfo; then
+     ps -ef |grep "$searchprocess" |grep -v grep
+     IFS=$'\n';for x in ${conns[@]};do 
+         unset IFS
+         ps -ef |grep "$x" |grep -v grep
+     done
+     echo -e "\nDone."
+     exit 0
+fi
+
+cmdline="$0 $*"
+
+while true; do
+    # Kill the processes that is already running
+    echo "searchprocess $searchprocess"
+	for x in $(ps -ef |grep "$searchprocess" |grep -v grep | awk '{print $2}'); do
+        if [ "$x" != "$$" ]; then
+              kill $x &>/dev/null
+        fi
+    done
+
+    for x in ${ipport[@]};do
+        kill_ipport $x
+    done
+
+    # ssh connect
+    cat << eof1 |expect -f - &
+$(python helper.py $conf expect)
+eof1
+    for x in ${ipport[@]};do
+        wait_ipport $x
+    done
+
+    procs=
+    IFS=$'\n';for x in ${conns[@]};do
+        unset IFS
+        procs="$procs|$x"
+    done
+    procs=${procs:1} # skip the first '|'
+
+    N=$(ps -ef |grep -E "$procs" |grep -v grep |wc -l)
+	if [ $N -eq ${#conns[@]} ]; then
+        echo -e "\nYou can browse http://$cloudman\nDone."
+        sleep infinity
+        #XXX detect_page_endless http://$dashboard/auth openstack
+        echo "$(date) $$ rerun program: /bin/bash $cmdline"
+        exec /bin/bash $cmdline
+		# never reach here
+	    break
+	fi
+	echo "...................................."
+done

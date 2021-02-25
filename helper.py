@@ -14,7 +14,7 @@ def load_yml(f):
 def generate_conf(vault, conf):
     data = load_yml('%s/.vault/%s'%(os.environ['HOME'], vault))
     env = Environment(loader=FileSystemLoader('./'))
-    template = env.get_template('%s.j2'%conf)
+    template = env.get_template('%s'%conf)
     outf = '%s/.vault/%s'%(os.environ['HOME'], conf)
     with open(outf, 'w') as fout:
         content = template.render(data)
@@ -28,7 +28,7 @@ def _ssh_forward_info(top):
             forward = ssh.get('forward')
             rules=[]
             if forward != None:
-                print('SSH Host: %s@%s:%s'%(ssh['user'], ssh['host'], ssh['port']))
+                print('SSH Host: %s -p %s -l %s'%(ssh['host'], ssh['port'], ssh['user']))
                 for k2 in forward.keys():
                     print('%-10s\t%21s:%-5s\t%21s:%-5s'%(k2, forward[k2]['host'], forward[k2]['port'], forward[k2]['rhost'], forward[k2]['rport']))
                 _ssh_forward_info(ssh.get('forward'))
