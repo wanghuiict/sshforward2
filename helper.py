@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 from jinja2 import Environment, FileSystemLoader
 import json
 import yaml
@@ -13,9 +14,10 @@ def load_yml(f):
 
 def generate_conf(vault, conf):
     data = load_yml('%s/.vault/%s'%(os.environ['HOME'], vault))
-    env = Environment(loader=FileSystemLoader('./'))
-    template = env.get_template('%s'%conf)
-    outf = '%s/.vault/%s'%(os.environ['HOME'], conf)
+    path, file_name = os.path.split(conf)
+    env = Environment(loader=FileSystemLoader(path))
+    template = env.get_template('%s'%file_name)
+    outf = '%s/.vault/%s'%(os.environ['HOME'], file_name)
     with open(outf, 'w') as fout:
         content = template.render(data)
         fout.write(content)
@@ -71,14 +73,32 @@ def print_ssh_forward_info(jsonf):
         d = json.load(f)
         _ssh_forward_info(d)
 
+def print_hook(jsonf):
+    with open(jsonf) as f:
+        d = json.load(f)
+        try:
+            print d['hook']
+        except KeyError:
+            pass
+
+
 if __name__ == '__main__':
-    f = sys.argv[1]
-    op = sys.argv[2]
+    op = ''
+    f = ''
+
+    try:
+        f = sys.argv[1]
+        op = sys.argv[2]
+    except:
+        time.sleep(2)
+        raise
 
     if op == 'expect':
         print_ssh_forward_expect(f)
     elif op == 'info':
         print_ssh_forward_info(f)
+    elif op == 'hook':
+        print_hook(f)
     elif op == 'genconf':
         vault = sys.argv[3]
         generate_conf(vault, f)

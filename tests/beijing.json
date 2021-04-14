@@ -1,0 +1,23 @@
+{
+    "hook": "hook-beijing",
+    "ssh-0": {
+        "host": "{{ loginhost }}",
+        "port": "{{ loginport }}",
+        "user": "{{ loginuser }}",
+        "pass": "{{ loginpass }}",
+        "forward": {
+            "redmine": {
+                "host": "{{ local_ip }}",
+                "port": "{{ redmine_forward }}",
+                "rhost": "{{ redmine_server }}",
+                "rport": "80"
+            },
+            "zentao": {
+                "host": "{{ local_ip }}",
+                "port": "8080",
+                "rhost": "10.10.149.14",
+                "rport": "8080"
+            }
+        }
+    }
+}

@@ -1,0 +1,5 @@
+#sleep infinity
+cloudman=$(python helper.py $conf info |grep ^cloudmanagement|awk '{print $2}')
+dashboard=$(python helper.py $conf info |grep ^dashboard|awk '{print $2}')
+echo -e "\nYou can browse http://$cloudman\nDone."
+detect_page_endless http://$dashboard/auth openstack

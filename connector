@@ -31,9 +31,12 @@ fi
 . functions
 
 showinfo=false
-while getopts ":i" opt; do
+clean=false
+while getopts ":ic" opt; do
     case $opt in
       i ) showinfo=true
+          ;;
+      c ) clean=true
           ;;
       ? ) echo "error input"
           exit 1;;
@@ -46,6 +49,7 @@ vault="$(basename $2)"
 # create conf
 conf=$(python helper.py $conf genconf $vault) || exit -127
 #echo $conf
+hook=$(python helper.py $conf hook)
 
 ##############################################################################
 # SSH Host: 1.2.3.4 -p 8022 -l user1
@@ -81,6 +85,13 @@ IFS=$'\n'; i=0; for x in $(python helper.py $conf info |grep "^SSH\ Host"); do
     ((i++))
 done
 
+IFS=$'\n'; for x in $(python helper.py $conf info |grep -v "^SSH\ Host"); do
+    unset IFS
+    read a b c <<< $x
+    ipport[$i]="$b"
+    ((i++))
+done
+
 #IFS=$'\n';for x in ${conns[@]};do echo $x;done
 
 if $showinfo; then
@@ -93,7 +104,9 @@ if $showinfo; then
      exit 0
 fi
 
-cmdline="$0 $*"
+program="$0"
+param1="$1"
+param2="$2"
 
 while true; do
     # Kill the processes that is already running
@@ -107,6 +120,10 @@ while true; do
     for x in ${ipport[@]};do
         kill_ipport $x
     done
+
+    if $clean; then
+        exit
+    fi
 
     # ssh connect
     cat << eof1 |expect -f - &
@@ -125,11 +142,9 @@ eof1
 
     N=$(ps -ef |grep -E "$procs" |grep -v grep |wc -l)
 	if [ $N -eq ${#conns[@]} ]; then
-        echo -e "\nYou can browse http://$cloudman\nDone."
-        sleep infinity
-        #XXX detect_page_endless http://$dashboard/auth openstack
-        echo "$(date) $$ rerun program: /bin/bash $cmdline"
-        exec /bin/bash $cmdline
+        . $hook
+        echo "$(date) $$ rerun program: /bin/bash $program $param1 $param2"
+        exec /bin/bash $program $param1 $param2
 		# never reach here
 	    break
 	fi

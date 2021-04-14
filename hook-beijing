@@ -1,0 +1,4 @@
+#sleep infinity
+read a redmine c <<< $(python helper.py $conf info |grep "^redmine")
+echo -e "\nYou can browse http://$redmine\nDone."
+detect_page_endless http://$redmine redmine

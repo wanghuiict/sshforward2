@@ -12,13 +12,17 @@ if [ $# -eq 0 ]; then
 	echo -e "Usage:\n\t$0 [-i] <conf file> <vault file>"
     echo -e "Options:"
     echo -e "\t-i        show config info and exit."
+    echo -e "\t-c        clean all processes and exit."
 	exit 0
 fi
 
 onlyshow=
-while getopts ":i" opt; do
+clean=
+while getopts ":ic" opt; do
     case $opt in
       i ) onlyshow="-i"
+          ;;
+      c ) clean="-c"
           ;;
       ? ) echo "error input"
           exit 1;;
@@ -33,5 +37,5 @@ get_vault_file $2 &> /dev/null || { echo "failed to get vault file: $1" >&1; exi
 # vault file located in ~/.vault/
 vault=$(basename $2)
 
-exec /bin/bash connector $onlyshow $1 $vault &
+exec /bin/bash connector $onlyshow $clean $1 $vault &
 
