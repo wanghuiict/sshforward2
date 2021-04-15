@@ -1,5 +1,5 @@
 {
-    "hook": "hook-openstack",
+    "hook": "hook-openstack-jiangsu",
     "ssh-0": {
         "host": "{{ loginhost }}",
         "port": "{{ loginport }}",

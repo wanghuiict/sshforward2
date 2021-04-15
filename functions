@@ -55,7 +55,7 @@ detect_page_endless() {
     local keyword="$2"
 
     while true; do
-        curl -s $url |grep "$keyword" &>/dev/null
+        curl -sk $url |grep "$keyword" &>/dev/null
         if [ $? -ne 0 ]; then
             if [ $count -eq 0 ]; then
                 return 1

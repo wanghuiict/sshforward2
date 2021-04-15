@@ -1,0 +1,4 @@
+#sleep infinity
+web=$(python helper.py $conf info |grep ^web|awk '{print $2}')
+echo -e "\nYou can browse https://$web\nDone."
+detect_page_endless https://$web/index.php/login "明御"
