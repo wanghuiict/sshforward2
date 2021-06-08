@@ -32,11 +32,14 @@ fi
 
 showinfo=false
 clean=false
-while getopts ":ic" opt; do
+typepass=false
+while getopts ":icp" opt; do
     case $opt in
       i ) showinfo=true
           ;;
       c ) clean=true
+          ;;
+      p ) typepass=true
           ;;
       ? ) echo "error input"
           exit 1;;
@@ -73,7 +76,16 @@ echo -e "-----------------------------------------------------------------------
 python helper.py $conf info
 echo -e "------------------------------------------------------------------------------"
 
-searchprocess="$(basename $0) $1 $2"
+program="$0"
+param1="$1"
+param2="$2"
+if $typepass; then
+    opt1="-p"
+else
+    opt1=
+fi
+
+searchprocess="$(basename $program) $param1 $param2|$(basename $program) -p $param1 $param2"
 conns=()
 ipport=()
 
@@ -95,7 +107,7 @@ done
 #IFS=$'\n';for x in ${conns[@]};do echo $x;done
 
 if $showinfo; then
-     ps -ef |grep "$searchprocess" |grep -v grep
+     ps -ef |grep -E "$searchprocess" |grep -v grep
      IFS=$'\n';for x in ${conns[@]};do 
          unset IFS
          ps -ef |grep "$x" |grep -v grep
@@ -104,14 +116,10 @@ if $showinfo; then
      exit 0
 fi
 
-program="$0"
-param1="$1"
-param2="$2"
-
 while true; do
     # Kill the processes that is already running
     echo "searchprocess $searchprocess"
-	for x in $(ps -ef |grep "$searchprocess" |grep -v grep | awk '{print $2}'); do
+	for x in $(ps -ef |grep -E "$searchprocess" |grep -v grep | awk '{print $2}'); do
         if [ "$x" != "$$" ]; then
               kill $x &>/dev/null
         fi
@@ -126,9 +134,13 @@ while true; do
     fi
 
     # ssh connect
+    if $typepass; then
+        /bin/bash -c "$(python helper.py $conf noexpect)"
+    else
     cat << eof1 |expect -f - &
 $(python helper.py $conf expect)
 eof1
+    fi
     for x in ${ipport[@]};do
         wait_ipport $x
     done
@@ -143,8 +155,8 @@ eof1
     N=$(ps -ef |grep -E "$procs" |grep -v grep |wc -l)
 	if [ $N -eq ${#conns[@]} ]; then
         . $hook
-        echo "$(date) $$ rerun program: /bin/bash $program $param1 $param2"
-        exec /bin/bash $program $param1 $param2
+        echo "$(date) $$ rerun program: /bin/bash $program $opt1 $param1 $param2"
+        exec /bin/bash $program $opt1 $param1 $param2
 		# never reach here
 	    break
 	fi

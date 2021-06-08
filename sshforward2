@@ -9,20 +9,24 @@ check_command python || exit 127
 
 if [ $# -eq 0 ]; then
     echo -e "provide services in SSH forwarding tunnel"
-	echo -e "Usage:\n\t$0 [-i] <conf file> <vault file>"
+	echo -e "Usage:\n\t$0 [-i][-c][-p] <conf file> <vault file>"
     echo -e "Options:"
     echo -e "\t-i        show config info and exit."
     echo -e "\t-c        clean all processes and exit."
+    echo -e "\t-p        type password."
 	exit 0
 fi
 
 onlyshow=
 clean=
-while getopts ":ic" opt; do
+typepass=
+while getopts ":icp" opt; do
     case $opt in
       i ) onlyshow="-i"
           ;;
       c ) clean="-c"
+          ;;
+      p ) typepass="-p"
           ;;
       ? ) echo "error input"
           exit 1;;
@@ -32,10 +36,15 @@ shift $(($OPTIND - 1))
 
 . functions
 # test
-get_vault_file $2 &> /dev/null || { echo "failed to get vault file: $1" >&1; exit 1; }
+#echo "[$1] [$2]"
+get_vault_file $2 &> /dev/null || { echo "failed to get vault file: $2" >&1; exit 1; }
 
 # vault file located in ~/.vault/
 vault=$(basename $2)
 
-exec /bin/bash connector $onlyshow $clean $1 $vault &
+if [ "$typepass" == "-p" ]; then
+exec /bin/bash connector $onlyshow $clean $typepass $1 $vault
+else
+exec /bin/bash connector $onlyshow $clean $typepass $1 $vault &
+fi
 

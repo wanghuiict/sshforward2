@@ -63,10 +63,29 @@ expect {\n\
                 print("%s"%expect)
                 _ssh_forward_expect(ssh.get('forward'))
 
+def _ssh_forward_no_expect(top):
+    for k1 in top.keys():
+        if k1[0:3] == 'ssh':
+            ssh = top[k1]
+            forward = ssh.get('forward')
+            rules=[]
+            if forward != None:
+                for k2 in forward.keys():
+                    rules.append('-L %s:%s:%s:%s'%(forward[k2]['host'], forward[k2]['port'], forward[k2]['rhost'], forward[k2]['rport']))
+                print('ssh -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -f -N %s %s -p %s -l %s;'%( ' '.join(rules), ssh['host'], ssh['port'], ssh['user']))
+                _ssh_forward_no_expect(ssh.get('forward'))
+
+
+
 def print_ssh_forward_expect(jsonf):
     with open(jsonf) as f:
         d = json.load(f)
         _ssh_forward_expect(d)
+
+def print_ssh_forward_no_expect(jsonf):
+    with open(jsonf) as f:
+        d = json.load(f)
+        _ssh_forward_no_expect(d)
 
 def print_ssh_forward_info(jsonf):
     with open(jsonf) as f:
@@ -95,6 +114,8 @@ if __name__ == '__main__':
 
     if op == 'expect':
         print_ssh_forward_expect(f)
+    elif op == 'noexpect':
+        print_ssh_forward_no_expect(f)
     elif op == 'info':
         print_ssh_forward_info(f)
     elif op == 'hook':
