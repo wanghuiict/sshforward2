@@ -1,5 +1,5 @@
 {
-    "hook": "hook-beijing",
+    "hook": "tests/hook-beijing",
     "ssh-0": {
         "host": "{{ loginhost }}",
         "port": "{{ loginport }}",

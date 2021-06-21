@@ -1,5 +1,5 @@
 {
-    "hook": "hook-openstack",
+    "hook": "tests/hook-openstack",
     "ssh-0": {
         "host": "{{ loginhost }}",
         "port": "{{ loginport }}",
