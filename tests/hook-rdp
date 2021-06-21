@@ -1,0 +1,17 @@
+#sleep infinity
+read a rdp c <<< $(python helper.py $conf info |grep "^rdp")
+# $rdp is local ip:port
+count=6
+while true; do
+    rdesktop $rdp 2>&1 |grep "ERROR: CredSSP" &>/dev/null
+    if [ $? -ne 0 ]; then
+        if [ $count -eq 0 ]; then
+            break
+        fi
+        ((count--))
+        sleep 5
+        continue
+    fi
+    count=6
+    sleep 30
+done
