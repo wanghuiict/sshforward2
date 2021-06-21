@@ -37,10 +37,12 @@ shift $(($OPTIND - 1))
 . functions
 # test
 #echo "[$1] [$2]"
-get_vault_file $2 &> /dev/null || { echo "failed to get vault file: $2" >&1; exit 1; }
+vault=$2
+[ -n "$vault" ] || vault=default
+get_vault_file $vault &> /dev/null || { echo "failed to get vault file: $vault" >&1; exit 1; }
 
 # vault file located in ~/.vault/
-vault=$(basename $2)
+vault=$(basename $vault)
 
 if [ "$typepass" == "-p" ]; then
 exec /bin/bash connector $onlyshow $clean $typepass $1 $vault

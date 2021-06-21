@@ -53,6 +53,7 @@ vault="$(basename $2)"
 conf=$(python helper.py $conf genconf $vault) || exit -127
 #echo $conf
 hook=$(python helper.py $conf hook)
+[ -n "$hook" ] || hook="hook-default"
 
 ##############################################################################
 # SSH Host: 1.2.3.4 -p 8022 -l user1
