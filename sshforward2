@@ -9,11 +9,12 @@ check_command python || exit 127
 
 if [ $# -eq 0 ]; then
     echo -e "provide services in SSH forwarding tunnel"
-	echo -e "Usage:\n\t$0 [-i][-c][-p] <conf file> <vault file>"
+	echo -e "Usage:\n\t$0 [-i][-c][-p] <setting file> [vault file]"
     echo -e "Options:"
     echo -e "\t-i        show config info and exit."
     echo -e "\t-c        clean all processes and exit."
     echo -e "\t-p        type password."
+    echo -e "visit https://github.com/wanghuiict/sshforward2/"
 	exit 0
 fi
 
